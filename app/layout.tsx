@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { AccountDropdown } from "@/components/account-dropdown";
+import { WalletLoginButton } from "@/components/wallet-login-button";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +33,7 @@ export default function RootLayout({
         <Providers>
           <header className="flex items-center justify-between px-6 py-4 border-b">
             <h1 className="text-lg font-bold">🔐 Password Manager</h1>
+            <WalletLoginButton />
             <AccountDropdown />
           </header>
           <main>{children}</main>

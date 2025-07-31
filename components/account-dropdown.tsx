@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { web3Accounts, web3Enable } from "@polkadot/extension-dapp";
 import { useAccountStore } from "@/lib/stores/accountStore";
+import { clearAuthToken } from "@/lib/auth";
 
 export function AccountDropdown() {
   const { accounts, currentAccount, setAccounts, setCurrentAccount } =
@@ -48,6 +49,17 @@ export function AccountDropdown() {
   useEffect(() => {
     loadAccounts();
   }, []);
+
+  useEffect(() => {
+    const storedAddress = localStorage.getItem("lastAccountAddress");
+    if (storedAddress && storedAddress !== currentAccount?.address) {
+      clearAuthToken();
+    }
+
+    if (currentAccount?.address) {
+      localStorage.setItem("lastAccountAddress", currentAccount.address);
+    }
+  }, [currentAccount]);
 
   return (
     <DropdownMenu>

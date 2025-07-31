@@ -5,7 +5,6 @@ export type CreatePasswordInput = {
   notes?: string;
   ciphertext: string;
   iv: string;
-  ownerAddress: string;
 };
 
 export type QueryPasswordType = {
@@ -16,7 +15,6 @@ export type QueryPasswordType = {
   notes?: string;
   ciphertext: string;
   iv: string;
-  ownerAddress: string;
   createdAt: string;
   updatedAt: string;
 };

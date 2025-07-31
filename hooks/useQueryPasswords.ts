@@ -1,16 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import axiosInstance from "@/lib/axiosInstance";
 import { QueryPasswordType } from "@/types/password";
 
-export function useQueryPasswords(ownerAddress: string | null | undefined) {
-  return useQuery<QueryPasswordType[], Error>({
-    queryKey: ["passwords", ownerAddress],
-    queryFn: async () => {
-      const res = await axios.get("/api/passwords", {
-        params: { ownerAddress },
-      });
+export function useQueryPasswords() {
+  return useQuery({
+    queryKey: ["passwords"],
+    queryFn: async (): Promise<QueryPasswordType> => {
+      const res = await axiosInstance.get("/passwords");
       return res.data;
     },
-    enabled: !!ownerAddress,
   });
 }

@@ -1,11 +1,12 @@
-import { CreatePasswordInput } from "@/types/password";
+// hooks/useCreatePasswordMutation.ts
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
+import axiosInstance from "@/lib/axiosInstance";
+import { CreatePasswordInput } from "@/types/password";
 
 export function useCreatePasswordMutation() {
   return useMutation({
     mutationFn: async (data: CreatePasswordInput) => {
-      const res = await axios.post("/api/passwords", data);
+      const res = await axiosInstance.post("/passwords", data);
       return res.data;
     },
   });

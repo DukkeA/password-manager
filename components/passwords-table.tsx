@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -35,8 +36,8 @@ import {
 
 import { useAccountStore } from "@/lib/stores/accountStore";
 import { useQueryPasswords } from "@/hooks/useQueryPasswords";
-import { useDecryptionKey } from "@/hooks/useDecryptionKey";
 import { decryptPassword } from "@/lib/crypto/encryption";
+import { useEncryptionKey } from "@/hooks/useEncryptionKey";
 
 // Password data type
 type Password = {
@@ -289,94 +290,45 @@ function DataTable<TData, TValue>({
 // Main component
 export default function PasswordsTable() {
   const { currentAccount } = useAccountStore();
-  const { data, isLoading, error } = useQueryPasswords(currentAccount?.address);
-  const { key, loading: loadingKey } = useDecryptionKey();
-
-  const [decryptedPasswords, setDecryptedPasswords] = useState<
-    {
-      id: string;
-      title: string;
-      username: string;
-      url: string;
-      password: string;
-      notes: string;
-    }[]
-  >([]);
+  const { data, isLoading, error } = useQueryPasswords();
+  const { key: encryptionKey, loading: loadingKey } = useEncryptionKey();
+  const [decrypted, setDecrypted] = useState<any[]>([]);
 
   useEffect(() => {
-    console.log("PasswordsTable useEffect - key:", key, "data:", data);
-    
-    if (!key || !data) {
-      console.log("Missing key or data - key:", !!key, "data:", !!data);
-      return;
-    }
+    if (!encryptionKey || !Array.isArray(data)) return;
 
-    const decryptAll = async () => {
-      try {
-        console.log("Starting decryption for", data.length, "passwords");
-        
-        const decrypted = await Promise.all(
-          data.map(async (entry) => {
-            try {
-              console.log("Decrypting entry:", entry.id, "ciphertext:", entry.ciphertext, "iv:", entry.iv);
-              
-              const password = await decryptPassword(
-                key,
-                entry.ciphertext,
-                entry.iv
-              );
-              
-              console.log("Successfully decrypted password for entry:", entry.id);
-              
-              return {
-                id: entry.id,
-                title: entry.title,
-                username: entry.username ?? "",
-                url: entry.url ?? "",
-                notes: entry.notes ?? "",
-                password,
-              };
-            } catch (error) {
-              console.error("Error decrypting entry:", entry.id, error);
-              return {
-                id: entry.id,
-                title: entry.title,
-                username: entry.username ?? "",
-                url: entry.url ?? "",
-                notes: entry.notes ?? "",
-                password: "Error decrypting",
-              };
-            }
-          })
-        );
-        
-        console.log("All passwords decrypted:", decrypted);
-        setDecryptedPasswords(decrypted);
-      } catch (error) {
-        console.error("Error in decryptAll:", error);
-      }
+    const decrypt = async () => {
+      const results = await Promise.all(
+        data.map(async (entry) => {
+          try {
+            const password = await decryptPassword(
+              encryptionKey,
+              entry.ciphertext,
+              entry.iv
+            );
+            return { ...entry, password };
+          } catch (err) {
+            console.error("Failed to decrypt entry", entry.id, err);
+            return { ...entry, password: "Error decrypting" };
+          }
+        })
+      );
+      setDecrypted(results);
     };
 
-    decryptAll();
-  }, [key, data]);
+    decrypt();
+  }, [data, encryptionKey]);
 
-  if (isLoading || loadingKey) return <p>Cargando contraseñas...</p>;
-  if (error) return <p>Error: {error.message}</p>;
-  if (!currentAccount) return <p>No hay cuenta seleccionada</p>;
-  if (!key) return <p>No se pudo generar la clave de descifrado</p>;
-  if (!data || data.length === 0) return <p>No hay contraseñas guardadas</p>;
-
-  console.log("Final render state:", {
-    decryptedPasswordsCount: decryptedPasswords.length,
-    originalDataCount: data?.length || 0,
-    hasKey: !!key,
-    currentAccount: currentAccount?.address
-  });
+  if (!currentAccount) return <p>No hay cuenta conectada.</p>;
+  if (loadingKey || isLoading) return <p>Cargando contraseñas…</p>;
+  if (error) return <p>Error al obtener contraseñas: {error.message}</p>;
+  if (!encryptionKey) return <p>Clave de descifrado no disponible.</p>;
+  if (!Array.isArray(data) || data.length === 0) return <p>No hay contraseñas guardadas.</p>;
 
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-2xl font-bold mb-6">Password Manager</h1>
-      <DataTable columns={columns} data={decryptedPasswords} />
+      <DataTable columns={columns} data={decrypted} />
     </div>
   );
 }

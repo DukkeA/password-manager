@@ -1,36 +1,39 @@
-import { web3FromAddress } from "@polkadot/extension-dapp";
+// lib/crypto/encryption.ts
 
-export async function signWithWallet(
-  address: string,
-  message: string
-): Promise<string> {
-  const injector = await web3FromAddress(address);
-  const hexMessage = `0x${Buffer.from(message).toString("hex")}`;
-
-  if (!injector.signer || typeof injector.signer.signRaw !== "function") {
-    throw new Error("Wallet signer or signRaw method is not available.");
-  }
-
-  const signed = await injector.signer.signRaw({
-    address,
-    data: hexMessage,
-    type: "bytes",
-  });
-
-  return signed.signature;
-}
-
-export async function deriveKeyFromSignature(
-  signature: string
+/**
+ * Deriva una clave AES-GCM a partir de la contraseña maestra del usuario
+ */
+export async function deriveKeyFromPassword(
+  password: string
 ): Promise<CryptoKey> {
   const encoder = new TextEncoder();
-  const hash = await crypto.subtle.digest("SHA-256", encoder.encode(signature));
-  return crypto.subtle.importKey("raw", hash, "AES-GCM", false, [
-    "encrypt",
-    "decrypt",
-  ]);
+  const passwordKeyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    { name: "PBKDF2" },
+    false,
+    ["deriveKey"]
+  );
+
+  const salt = encoder.encode("password-manager-static-salt"); // Se puede hacer dinámico en el futuro
+
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: 100_000,
+      hash: "SHA-256",
+    },
+    passwordKeyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
 }
 
+/**
+ * Encripta la contraseña del usuario con la clave derivada
+ */
 export async function encryptPassword(
   key: CryptoKey,
   password: string
@@ -50,6 +53,9 @@ export async function encryptPassword(
   };
 }
 
+/**
+ * Desencripta la contraseña guardada con la clave derivada
+ */
 export async function decryptPassword(
   key: CryptoKey,
   ciphertext: string,
@@ -63,5 +69,6 @@ export async function decryptPassword(
     key,
     cipherBytes
   );
+
   return new TextDecoder().decode(decrypted);
 }

@@ -19,16 +19,13 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreatePasswordMutation } from "@/hooks/useCreatePassword";
 import { useAccountStore } from "@/lib/stores/accountStore";
-import {
-  encryptPassword,
-  deriveKeyFromSignature,
-  signWithWallet,
-} from "@/lib/crypto/encryption";
+import { useMasterPasswordStore } from "@/lib/stores/masterPasswordStore";
+import { encryptPassword, deriveKeyFromPassword } from "@/lib/crypto/encryption";
 
 const formSchema = z.object({
-  title: z.string().min(1).min(1).max(50),
-  username: z.string().min(1).min(1).max(50),
-  url: z.string().min(1).min(1).max(100),
+  title: z.string().min(1).max(50),
+  username: z.string().min(1).max(50),
+  url: z.string().min(1).max(100),
   password: z.string().min(1).max(100),
   notes: z.string().max(250).optional(),
 });
@@ -40,6 +37,7 @@ export default function PasswordCreationForm() {
 
   const createPasswordMutation = useCreatePasswordMutation();
   const { currentAccount } = useAccountStore();
+  const { password: masterPassword } = useMasterPasswordStore();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!currentAccount) {
@@ -47,10 +45,13 @@ export default function PasswordCreationForm() {
       return;
     }
 
+    if (!masterPassword) {
+      toast.error("La contraseña maestra no está disponible.");
+      return;
+    }
+
     try {
-      const message = `password-manager-${currentAccount.address}`;
-      const signature = await signWithWallet(currentAccount.address, message);
-      const key = await deriveKeyFromSignature(signature);
+      const key = await deriveKeyFromPassword(masterPassword);
       const { ciphertext, iv } = await encryptPassword(key, values.password);
 
       await createPasswordMutation.mutateAsync({
@@ -60,7 +61,6 @@ export default function PasswordCreationForm() {
         notes: values.notes,
         ciphertext,
         iv,
-        ownerAddress: currentAccount.address,
       });
 
       toast.success("Contraseña guardada exitosamente");
@@ -86,12 +86,10 @@ export default function PasswordCreationForm() {
               <FormControl>
                 <Input placeholder="title..." type="text" {...field} />
               </FormControl>
-
               <FormMessage />
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="username"
@@ -106,7 +104,6 @@ export default function PasswordCreationForm() {
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="url"
@@ -123,7 +120,6 @@ export default function PasswordCreationForm() {
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="password"
@@ -138,7 +134,6 @@ export default function PasswordCreationForm() {
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="notes"
@@ -157,7 +152,7 @@ export default function PasswordCreationForm() {
             </FormItem>
           )}
         />
-        <Button type="submit">Submit</Button>
+        <Button type="submit">Guardar</Button>
       </form>
     </Form>
   );

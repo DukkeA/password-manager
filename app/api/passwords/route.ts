@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireAuth } from "@/lib/middleware/requireAuth";
 
 export async function POST(req: NextRequest) {
   try {
+    const authResult = await requireAuth(req);
+    if ("status" in authResult) return authResult; // Token inválido
+
+    const { address } = authResult;
     const body = await req.json();
 
-    const { title, username, url, notes, ciphertext, iv, ownerAddress } = body;
+    const { title, username, url, notes, ciphertext, iv } = body;
 
-    if (!title || !ciphertext || !iv || !ownerAddress || !username || !url) {
+    if (!title || !ciphertext || !iv || !username || !url) {
       return NextResponse.json(
         { error: "Required fields are missing" },
         { status: 400 }
@@ -22,7 +27,7 @@ export async function POST(req: NextRequest) {
         notes,
         ciphertext,
         iv,
-        ownerAddress,
+        ownerAddress: address, // desde JWT
       },
     });
 
@@ -37,15 +42,13 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const ownerAddress = searchParams.get("ownerAddress");
+  const authResult = await requireAuth(req);
+  if ("status" in authResult) return authResult; // Token inválido
 
-  if (!ownerAddress) {
-    return NextResponse.json({ error: "ownerAddress is missing" }, { status: 400 });
-  }
+  const { address } = authResult;
 
   const entries = await prisma.passwordEntry.findMany({
-    where: { ownerAddress },
+    where: { ownerAddress: address },
     orderBy: { createdAt: "desc" },
   });
 
