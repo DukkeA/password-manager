@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { web3FromAddress } from "@polkadot/extension-dapp";
 import { useAccountStore } from "@/lib/stores/accountStore";
-import { setAuthToken, getAuthToken } from "@/lib/auth";
+import { setAuthToken } from "@/lib/auth";
 import axios from "axios";
-import { jwtDecode } from "jwt-decode";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -17,32 +16,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useMasterPasswordStore } from "@/lib/stores/masterPasswordStore";
-
-type JwtPayload = {
-  address: string;
-  exp: number;
-};
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 export function WalletLoginButton() {
   const { currentAccount } = useAccountStore();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [inputPassword, setInputPassword] = useState("");
   const { setPassword } = useMasterPasswordStore();
-
-  useEffect(() => {
-    const token = getAuthToken();
-    if (token && currentAccount?.address) {
-      const payload = jwtDecode<JwtPayload>(token);
-      if (payload?.address === currentAccount.address) {
-        setIsAuthenticated(true);
-      } else {
-        setIsAuthenticated(false);
-      }
-    } else {
-      setIsAuthenticated(false);
-    }
-  }, [currentAccount]);
+  const { isFullyAuthenticated, hasToken } = useAuthStatus();
 
   const handleLogin = async () => {
     if (!currentAccount) return;
@@ -69,7 +50,6 @@ export function WalletLoginButton() {
 
       const token = response.data.token;
       setAuthToken(token);
-      setIsAuthenticated(true);
 
       setShowPasswordDialog(true);
     } catch (error: any) {
@@ -84,6 +64,7 @@ export function WalletLoginButton() {
       return;
     }
     setPassword(inputPassword);
+    setInputPassword("");
     setShowPasswordDialog(false);
     toast.success("Logged in successfully");
   };
@@ -93,11 +74,16 @@ export function WalletLoginButton() {
       <button
         onClick={handleLogin}
         className={`px-4 py-2 rounded ${
-          isAuthenticated ? "bg-green-600" : "bg-blue-600"
+          isFullyAuthenticated ? "bg-green-600" : "bg-blue-600"
         } text-white`}
-        disabled={isAuthenticated}
+        disabled={isFullyAuthenticated || hasToken}
       >
-        {isAuthenticated ? "Authenticated" : "Login with Wallet"}
+        {isFullyAuthenticated 
+          ? "Authenticated" 
+          : hasToken 
+          ? "Enter Master Password"
+          : "Login with Wallet"
+        }
       </button>
 
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
@@ -110,6 +96,11 @@ export function WalletLoginButton() {
             value={inputPassword}
             onChange={(e) => setInputPassword(e.target.value)}
             placeholder="Master password"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSubmitPassword();
+              }
+            }}
           />
           <Button onClick={handleSubmitPassword} className="mt-4 w-full">
             Confirm
