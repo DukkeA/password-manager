@@ -41,12 +41,12 @@ export default function PasswordCreationForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!currentAccount) {
-      toast.error("Debes conectar una cuenta de wallet");
+      toast.error("You must connect a wallet account");
       return;
     }
 
     if (!masterPassword) {
-      toast.error("La contraseña maestra no está disponible.");
+      toast.error("Master password is not available.");
       return;
     }
 
@@ -63,11 +63,11 @@ export default function PasswordCreationForm() {
         iv,
       });
 
-      toast.success("Contraseña guardada exitosamente");
+      toast.success("Password saved successfully");
       form.reset();
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error("Ocurrió un error al guardar la contraseña.");
+      toast.error("An error occurred while saving the password.");
     }
   }
 
@@ -152,7 +152,7 @@ export default function PasswordCreationForm() {
             </FormItem>
           )}
         />
-        <Button type="submit">Guardar</Button>
+        <Button type="submit">Save</Button>
       </form>
     </Form>
   );

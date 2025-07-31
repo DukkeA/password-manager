@@ -5,7 +5,7 @@ import { requireAuth } from "@/lib/middleware/requireAuth";
 export async function POST(req: NextRequest) {
   try {
     const authResult = await requireAuth(req);
-    if ("status" in authResult) return authResult; // Token inválido
+    if ("status" in authResult) return authResult; // Invalid token
 
     const { address } = authResult;
     const body = await req.json();
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
         notes,
         ciphertext,
         iv,
-        ownerAddress: address, // desde JWT
+        ownerAddress: address, // from JWT
       },
     });
 
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const authResult = await requireAuth(req);
-  if ("status" in authResult) return authResult; // Token inválido
+  if ("status" in authResult) return authResult; // Invalid token
 
   const { address } = authResult;
 

@@ -20,7 +20,7 @@ export const useAccountStore = create<AccountState>((set, get) => ({
   setAccounts: (accounts) => set({ accounts }),
   setCurrentAccount: (account) => {
     const currentAccount = get().currentAccount;
-    // Si está cambiando de cuenta, limpiar la clave maestra
+    // If changing account, clear the master password
     if (currentAccount && currentAccount.address !== account.address) {
       useMasterPasswordStore.getState().clearPassword();
     }

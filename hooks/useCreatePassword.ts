@@ -12,7 +12,7 @@ export function useCreatePasswordMutation() {
       return res.data;
     },
     onSuccess: () => {
-      // Invalidar las queries de contraseñas para actualizar la tabla automáticamente
+      // Invalidate password queries to automatically update the table
       queryClient.invalidateQueries({ queryKey: ["passwords"] });
     },
   });

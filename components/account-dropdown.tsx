@@ -67,7 +67,7 @@ export function AccountDropdown() {
         <Button variant="outline" className="min-w-[220px] justify-between">
           {currentAccount
             ? currentAccount.name ?? currentAccount.address
-            : "Conectar cuenta"}
+            : "Connect Account"}
         </Button>
       </DropdownMenuTrigger>
 

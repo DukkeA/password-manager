@@ -1,7 +1,7 @@
 // lib/crypto/encryption.ts
 
 /**
- * Deriva una clave AES-GCM a partir de la contraseña maestra del usuario
+ * Derives an AES-GCM key from the user's master password
  */
 export async function deriveKeyFromPassword(
   password: string
@@ -15,7 +15,7 @@ export async function deriveKeyFromPassword(
     ["deriveKey"]
   );
 
-  const salt = encoder.encode("password-manager-static-salt"); // Se puede hacer dinámico en el futuro
+  const salt = encoder.encode("password-manager-static-salt"); // Can be made dynamic in the future
 
   return crypto.subtle.deriveKey(
     {
@@ -32,7 +32,7 @@ export async function deriveKeyFromPassword(
 }
 
 /**
- * Encripta la contraseña del usuario con la clave derivada
+ * Encrypts the user's password with the derived key
  */
 export async function encryptPassword(
   key: CryptoKey,
@@ -54,7 +54,7 @@ export async function encryptPassword(
 }
 
 /**
- * Desencripta la contraseña guardada con la clave derivada
+ * Decrypts the saved password with the derived key
  */
 export async function decryptPassword(
   key: CryptoKey,
